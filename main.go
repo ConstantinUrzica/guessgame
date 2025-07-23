@@ -16,17 +16,18 @@ type Game struct {
 	Game_state    string
 }
 
-// Create a new instance and save it to json
 func newGame(w http.ResponseWriter, r *http.Request) {
-	id := rand.Intn(10000)
+	id, err := strconv.Atoi(r.URL.Query().Get("gameID"))
+	if err != nil {
+		id = rand.Intn(10000)
+	}
 	targetNumber := rand.Intn(100)
 	currentGame := Game{id, targetNumber, 10, "ONGOING"}
 
 	saveToFile(&currentGame)
-	fmt.Fprintf(w, fmt.Sprintf("New game instance created. Use id=%d", currentGame.Id))
+	fmt.Fprintf(w, fmt.Sprintf("New game instance created. Use id=%d in the link to play yor session (Ex: localhost:8080/api/{id}/guess?userguess={yourguess}", currentGame.Id))
 }
 
-// Save game instance to file as JSON
 func saveToFile(game *Game) {
 	gameData, _ := json.Marshal(game)
 	filename := strconv.Itoa(game.Id)
@@ -43,6 +44,8 @@ func loadFromFile(filename string) *Game {
 	if err != nil {
 		fmt.Println("Error reading file:", err)
 	}
+
+	//TODO: add a check here in case the filename is not valid??
 	json.Unmarshal(filecontent, &loadedGame)
 	return &loadedGame
 }
@@ -56,35 +59,31 @@ func checkUserGuess(guess int, game *Game) string {
 		} else {
 			return "HIGHER"
 		}
-
 	} else {
 		return "LOST"
 	}
 }
 
 func guessOnline(w http.ResponseWriter, r *http.Request) {
-	// **Validation
 	guessString := r.URL.Query().Get("userguess")
-	gameInstance := r.URL.Query().Get("userID")
+	gameInstance := r.PathValue("gameID")
 	if guessString == "" {
 		http.Error(w, "Missing <userguess> parameter from GET request", http.StatusBadRequest)
 		return
 	}
 	if gameInstance == "" {
-		http.Error(w, "Missing <userID> parameter from GET request", http.StatusBadRequest)
+		http.Error(w, "Missing <userID> parameter from url path", http.StatusBadRequest)
 		return
 	}
-	fmt.Fprintf(w, "DEBUG: guessString ="+guessString+"\n")
 
 	guess, err := strconv.Atoi(guessString)
 	if err != nil || guess < 1 || guess > 100 {
 		http.Error(w, "Invalid guess: must be a number between 1 and 100", http.StatusBadRequest)
 		return
 	}
-	gameID, err := strconv.Atoi(gameInstance)
-	//**
 
-	fmt.Fprintf(w, "userguess="+guessString)
+	// TODO: add validation for this
+	gameID, _ := strconv.Atoi(gameInstance)
 
 	game := loadFromFile(strconv.Itoa(gameID))
 	result := checkUserGuess(guess, game)
@@ -92,38 +91,35 @@ func guessOnline(w http.ResponseWriter, r *http.Request) {
 	switch result {
 	case "WON":
 		{
-			game.Guess_counter--
+			game.Guess_counter = 0
 			game.Game_state = "WON"
 			saveToFile(game)
-			fmt.Fprintf(w, "Congratulations! You've WON!!!")
+			fmt.Fprintf(w, "\n\nCongratulations! You've WON!!!\n\n")
 		}
 	case "LOWER":
 		{
 			game.Guess_counter--
 			saveToFile(game)
-			fmt.Fprintf(w, "Almost there...try Higher...")
+			fmt.Fprintf(w, "\n\nAlmost there...try Higher...\n\n")
 		}
 	case "HIGHER":
 		{
 			game.Guess_counter--
 			saveToFile(game)
-			fmt.Fprintf(w, "Almost there...try Lower...")
+			fmt.Fprintf(w, "\n\nAlmost there...try Lower...\n\n")
 		}
 	case "LOST":
 		{
-			game.Guess_counter--
+			game.Guess_counter = 0
 			game.Game_state = "LOST"
 			saveToFile(game)
-			fmt.Fprintf(w, "Sorry, you've LOST!")
-
+			fmt.Fprintf(w, "\n\nSorry, you've LOST! Please create a new game and try again\n\n")
 		}
-
 	}
-
 }
 
 func main() {
-	http.HandleFunc("/newgame", newGame)
-	http.HandleFunc("/guess", guessOnline)
+	http.HandleFunc("/api/newgame", newGame)
+	http.HandleFunc("/api/{gameID}/guess", guessOnline)
 	http.ListenAndServe(":8080", nil)
 }
