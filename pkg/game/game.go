@@ -8,6 +8,9 @@ import (
 	"guessgame/pkg/db"
 )
 
+// TODO: create a game interface which contains New() and Guess() methods, just like DB
+// the constructor needs to receive dbPath
+// game should be passed as a param to the handlers...
 const dbPath = "DB"
 
 func newGame(idStr string) string {
