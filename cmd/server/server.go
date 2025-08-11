@@ -1,34 +1,19 @@
 package main
 
 import (
-	"fmt"
 	"net/http"
-	"os"
-	"time"
-
-	"guessgame/pkg/game"
 
 	"github.com/julienschmidt/httprouter"
-	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+
+	"guessgame/internal/logger"
+	"guessgame/pkg/game"
 )
-
-func initLogger() {
-	zerolog.TimeFieldFormat = time.RFC3339
-	logfile, err := os.OpenFile("server.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
-	if err != nil {
-		panic(fmt.Sprintf("Failed to open log file: %v", err))
-	}
-	consoleWriter := zerolog.ConsoleWriter{Out: os.Stdout, TimeFormat: time.RFC3339}
-	multi := zerolog.MultiLevelWriter(consoleWriter, logfile)
-
-	log.Logger = zerolog.New(multi).With().Timestamp().Logger()
-}
 
 //TODO: Move path variable here and pass it on to NewGame and GuessOnline
 
 func main() {
-	initLogger()
+	logger.InitLogger()
 	router := httprouter.New()
 	router.GET("/api/newgame", game.NewGame)
 	router.GET("/api/guess/:gameID/", game.GuessOnline)
