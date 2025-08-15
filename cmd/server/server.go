@@ -6,20 +6,24 @@ import (
 	"github.com/julienschmidt/httprouter"
 	"github.com/rs/zerolog/log"
 
-	"guessgame/internal/logger"
+	"guessgame/observability/logger"
 	"guessgame/pkg/game"
 )
 
-//TODO: Move path variable here and pass it on to NewGame and GuessOnline
-
 func main() {
 	logger.InitLogger()
+	cfgPath := "./cmd/server/config.json"
+
+	cfg, err := Load(cfgPath)
+	if err != nil {
+		log.Panic().Err(err).Msg("Cannot load config file")
+	}
 	router := httprouter.New()
-	router.GET("/api/newgame", game.NewGame)
-	router.GET("/api/guess/:gameID/", game.GuessOnline)
+	router.GET("/api/newgame", game.NewGameHandler(cfg.DBPath))
+	router.GET("/api/guess/:gameID/", game.GuessOnlineHandler(cfg.DBPath))
 
 	log.Info().Msg("Server starting on port :8080")
-	err := http.ListenAndServe(":8080", router)
+	err = http.ListenAndServe(":8080", router)
 	if err != nil {
 		log.Fatal().Err(err).Msg("Server failed to start")
 	}
