@@ -18,6 +18,7 @@ func main() {
 	if err != nil {
 		log.Panic().Err(err).Msg("Cannot load config file")
 	}
+
 	router := httprouter.New()
 	router.GET("/api/newgame", game.NewGameHandler(cfg.DBPath))
 	router.GET("/api/guess/:gameID/", game.GuessOnlineHandler(cfg.DBPath))

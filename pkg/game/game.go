@@ -19,7 +19,7 @@ func newGame(idStr string, dbPath string) string {
 	db := db.NewFileDB[Game](strconv.Itoa(id), dbPath)
 	db.Save(&currentGame)
 
-	return fmt.Sprintf("New game instance created. Use id=%d in the link to play yor session (Ex: localhost:8080/api/{id}/guess?userguess={yourguess}", currentGame.Id)
+	return fmt.Sprintf("New game instance created. Use id=%d in the link to play yor session (Ex: localhost:8080/api/guess/{id}/?userguess={yourguess}", currentGame.Id)
 }
 
 func guessOnline(userGuess string, gameInstance string, dbPath string) (string, error) {
@@ -43,7 +43,7 @@ func guessOnline(userGuess string, gameInstance string, dbPath string) (string, 
 			game.Guess_counter = 0
 			game.Game_state = GameStateWon
 			db.Save(game)
-			return "\nCongratulations! You've WON!!!\n", nil
+			return "\nCongratulations! You've Won!!!\n", nil
 		}
 	case GameStateLower:
 		{
@@ -62,7 +62,7 @@ func guessOnline(userGuess string, gameInstance string, dbPath string) (string, 
 			game.Guess_counter = 0
 			game.Game_state = GameStateLost
 			db.Save(game)
-			return "\nPlease create a new game and try again\n", nil
+			return "\nYou Lost! Please create a new game and try again\n", nil
 		}
 	}
 
